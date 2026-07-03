@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>女皇計時</title>
+<style>
+body{
+    margin:0;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+    box-sizing:border-box;
+    font-family:"Segoe UI",sans-serif;
+    background:linear-gradient(180deg,#f7efe5 0%,#efe2d0 100%);
+    color:#2a2118;
+}
+
+.app{
+    width:min(620px,100%);
+    background:#fffaf4;
+    border:1px solid #e6d5bf;
+    border-radius:24px;
+    box-shadow:0 18px 40px rgba(92,60,27,.18);
+    padding:32px 24px;
+    text-align:center;
+}
+
+h1{
+    margin:0 0 10px;
+    font-size:34px;
+}
+
+.author{
+    margin:0 0 14px;
+    font-size:14px;
+    color:#7b6755;
+}
+
+.hint{
+    margin:0 0 24px;
+    font-size:15px;
+    color:#6b5846;
+}
+
+.toolbar{
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    justify-content:center;
+    margin-bottom:18px;
+}
+
+.toolbar button,
+.control-btn{
+    min-width:110px;
+    padding:12px 18px;
+    background:#3b2d20;
+    color:#fff9f1;
+}
+
+.toolbar button.secondary,
+.control-btn.secondary{
+    background:#d7c0a4;
+    color:#2a2118;
+}
+
+.timer-panel{
+    border-radius:20px;
+    padding:24px 20px;
+    background:linear-gradient(135deg,#fff 0%,#f6eadb 100%);
+    border:1px solid #ead7bf;
+}
+
+.timer-label{
+    font-size:15px;
+    color:#7b6755;
+    margin-bottom:8px;
+}
+
+.timer-input{
+    width:100%;
+    box-sizing:border-box;
+    text-align:center;
+    font-size:68px;
+    line-height:1;
+    font-weight:700;
+    letter-spacing:3px;
+    padding:10px 12px;
+    margin-bottom:20px;
+    border:2px solid #d9c6ae;
+    border-radius:18px;
+    background:#fff;
+    color:#2a2118;
+}
+
+.timer-input:focus{
+    outline:none;
+    border-color:#8a5a2b;
+}
+
+.control-row{
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    justify-content:center;
+}
+
+button{
+    border:none;
+    border-radius:14px;
+    cursor:pointer;
+    font-size:16px;
+    font-weight:700;
+    transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+button:hover{
+    transform:translateY(-1px);
+    box-shadow:0 8px 18px rgba(92,60,27,.12);
+}
+
+.section-title{
+    margin:28px 0 14px;
+    font-size:18px;
+}
+
+.skill-buttons{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+}
+
+.skill-row{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 140px;
+    gap:12px;
+    align-items:center;
+}
+
+.skill-btn{
+    width:100%;
+    padding:16px 14px;
+    background:#b64635;
+    color:#fff;
+}
+
+.skill-row:nth-child(2) .skill-btn{
+    background:#2f6f5f;
+}
+
+.skill-row:nth-child(3) .skill-btn{
+    background:#7a4aa6;
+}
+
+.skill-name{
+    display:block;
+    font-size:20px;
+    margin-bottom:4px;
+}
+
+.skill-cooldown{
+    display:block;
+    font-size:14px;
+    opacity:.9;
+}
+
+.skill-result{
+    border:1px solid #ead7bf;
+    background:#fff;
+    border-radius:14px;
+    min-height:76px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:28px;
+    font-weight:700;
+    color:#3b2d20;
+    cursor:pointer;
+    user-select:all;
+}
+
+.copy-note,
+.global-copy-note,
+.status{
+    min-height:22px;
+    font-size:14px;
+}
+
+.copy-note,
+.global-copy-note{
+    color:#2c7a4b;
+}
+
+.status{
+    margin-top:18px;
+    color:#8a3b2f;
+    font-weight:600;
+}
+
+@media (max-width: 560px){
+    .app{
+        padding:24px 18px;
+    }
+
+    .timer-input{
+        font-size:54px;
+    }
+
+    .toolbar button,
+    .control-btn{
+        flex:1 1 100%;
+    }
+
+    .skill-row{
+        grid-template-columns:1fr;
+    }
+
+    .skill-result{
+        min-height:58px;
+    }
+}
+</style>
+</head>
+<body>
+<div class="app">
+    <h1>女皇計時</h1>
+    <p class="author">作者 : Raco  Dc : capoouo</p>
+    <p class="hint">上方時間可以自己輸入，輸入 `5950` 或 `59:50` 都可以。下方按鈕會用上方時間去減掉秒數，結果顯示在右邊，點右邊結果可以直接複製。</p>
+
+    <div class="toolbar">
+        <button type="button" id="openPopup">開啟小視窗</button>
+        <button type="button" class="secondary" id="copyAll">一次複製四個</button>
+    </div>
+    <div class="global-copy-note" id="globalCopyMessage"></div>
+
+    <div class="timer-panel">
+        <div class="timer-label">目前時間</div>
+        <input id="timerInput" class="timer-input" type="text" value="59:59" inputmode="numeric" maxlength="5" autocomplete="off">
+
+        <div class="control-row">
+            <button type="button" class="control-btn" id="startButton">開始</button>
+            <button type="button" class="control-btn secondary" id="pauseButton">暫停</button>
+            <button type="button" class="control-btn secondary" id="resetButton">重設</button>
+        </div>
+    </div>
+
+    <h2 class="section-title">四個功能</h2>
+    <div class="skill-buttons">
+        <div class="skill-row">
+            <button type="button" class="skill-btn" data-id="1">
+                <span class="skill-name">反盾</span>
+                <span class="skill-cooldown">用上方時間減 79 秒</span>
+            </button>
+            <div class="skill-result" id="result1" title="點一下複製">--:--</div>
+        </div>
+        <div class="copy-note" id="copy1"></div>
+
+        <div class="skill-row">
+            <button type="button" class="skill-btn" data-id="2">
+                <span class="skill-name">變豬</span>
+                <span class="skill-cooldown">用上方時間減 59 秒</span>
+            </button>
+            <div class="skill-result" id="result2" title="點一下複製">--:--</div>
+        </div>
+        <div class="copy-note" id="copy2"></div>
+
+        <div class="skill-row">
+            <button type="button" class="skill-btn" data-id="3">
+                <span class="skill-name">鎖潛</span>
+                <span class="skill-cooldown">用上方時間減 89 秒</span>
+            </button>
+            <div class="skill-result" id="result3" title="點一下複製">--:--</div>
+        </div>
+        <div class="copy-note" id="copy3"></div>
+
+        <div class="skill-row">
+            <button type="button" class="skill-btn" data-id="4">
+                <span class="skill-name">活屍</span>
+                <span class="skill-cooldown">用上方時間減 59 秒</span>
+            </button>
+            <div class="skill-result" id="result4" title="點一下複製">--:--</div>
+        </div>
+        <div class="copy-note" id="copy4"></div>
+    </div>
+
+    <div class="status" id="statusText"></div>
+</div>
+
+<script>
+const initialSeconds = 59 * 60 + 59;
+const skills = [
+    { id: 1, name: "反盾", shortName: "反", seconds: 79 },
+    { id: 2, name: "變豬", shortName: "豬", seconds: 59 },
+    { id: 3, name: "鎖潛", shortName: "鎖", seconds: 89 },
+    { id: 4, name: "活屍", shortName: "活屍", seconds: 59 }
+];
+
+let remainingSeconds = initialSeconds;
+let timerId = null;
+let popupWindow = null;
+
+const timerInput = document.getElementById("timerInput");
+const statusText = document.getElementById("statusText");
+const startButton = document.getElementById("startButton");
+const pauseButton = document.getElementById("pauseButton");
+const resetButton = document.getElementById("resetButton");
+const skillButtons = document.querySelectorAll(".skill-btn");
+
+function formatTime(totalSeconds){
+    const safeSeconds = Math.max(0, totalSeconds);
+    const minutes = Math.floor(safeSeconds / 60);
+    const seconds = safeSeconds % 60;
+    return String(minutes).padStart(2, "0") + ":" + String(seconds).padStart(2, "0");
+}
+
+function parseTime(value){
+    const text = value.trim().replace(":", "");
+
+    if (!text) {
+        return null;
+    }
+
+    if (!/^\d{1,4}$/.test(text)) {
+        return NaN;
+    }
+
+    const padded = text.padStart(4, "0");
+    const minutes = Number(padded.slice(0, 2));
+    const seconds = Number(padded.slice(2, 4));
+
+    if (seconds >= 60) {
+        return NaN;
+    }
+
+    return minutes * 60 + seconds;
+}
+
+function getSkill(id){
+    return skills.find((skill) => skill.id === id);
+}
+
+function formatCopyText(resultText, skill){
+    return resultText + skill.shortName;
+}
+
+function setCopyMessage(id, message){
+    const mainMessage = document.getElementById("copy" + id);
+    if (mainMessage) {
+        mainMessage.textContent = message;
+    }
+
+    if (popupWindow && !popupWindow.closed) {
+        const popupMessage = popupWindow.document.getElementById("copy" + id);
+        if (popupMessage) {
+            popupMessage.textContent = message;
+        }
+    }
+}
+
+function setGlobalMessage(sourceDocument, message){
+    const target = sourceDocument.getElementById("globalCopyMessage");
+    if (target) {
+        target.textContent = message;
+    }
+}
+
+function render(){
+    timerInput.value = formatTime(remainingSeconds);
+
+    if (popupWindow && !popupWindow.closed) {
+        const popupTimerInput = popupWindow.document.getElementById("timerInput");
+        if (popupTimerInput) {
+            popupTimerInput.value = timerInput.value;
+        }
+    }
+}
+
+function stopTimer(){
+    if (timerId !== null) {
+        clearInterval(timerId);
+        timerId = null;
+    }
+}
+
+function tick(){
+    if (remainingSeconds <= 0) {
+        remainingSeconds = 0;
+        render();
+        stopTimer();
+        statusText.textContent = "時間到";
+        syncPopupState();
+        return;
+    }
+
+    remainingSeconds -= 1;
+    render();
+    syncPopupState();
+
+    if (remainingSeconds <= 0) {
+        remainingSeconds = 0;
+        render();
+        stopTimer();
+        statusText.textContent = "時間到";
+        syncPopupState();
+    }
+}
+
+function applyManualTime(value = timerInput.value){
+    const parsed = parseTime(value);
+
+    if (parsed === null) {
+        statusText.textContent = "請輸入時間";
+        render();
+        syncPopupState();
+        return false;
+    }
+
+    if (Number.isNaN(parsed)) {
+        statusText.textContent = "時間格式錯誤";
+        render();
+        syncPopupState();
+        return false;
+    }
+
+    remainingSeconds = parsed;
+    render();
+    syncPopupState();
+    return true;
+}
+
+function startTimer(){
+    if (!applyManualTime()) {
+        return;
+    }
+
+    if (timerId !== null || remainingSeconds <= 0) {
+        return;
+    }
+
+    statusText.textContent = "倒數中";
+    syncPopupState();
+    timerId = setInterval(tick, 1000);
+}
+
+function pauseTimer(){
+    stopTimer();
+    applyManualTime();
+    statusText.textContent = "已暫停";
+    syncPopupState();
+}
+
+function resetResults(){
+    skills.forEach((skill) => {
+        const resultElement = document.getElementById("result" + skill.id);
+        if (resultElement) {
+            resultElement.textContent = "--:--";
+        }
+        setCopyMessage(skill.id, "");
+    });
+}
+
+function resetTimer(){
+    stopTimer();
+    remainingSeconds = initialSeconds;
+    render();
+    resetResults();
+    statusText.textContent = "已重設為 59:59";
+    syncPopupState();
+}
+
+function showSkillResult(id){
+    const parsed = parseTime(timerInput.value);
+
+    if (parsed === null || Number.isNaN(parsed)) {
+        statusText.textContent = "請先輸入正確時間";
+        syncPopupState();
+        return;
+    }
+
+    remainingSeconds = parsed;
+    render();
+
+    const skill = getSkill(id);
+    const resultElement = document.getElementById("result" + id);
+    const calculated = Math.max(0, remainingSeconds - skill.seconds);
+
+    resultElement.textContent = formatTime(calculated);
+    setCopyMessage(id, "點結果可複製");
+    statusText.textContent = skill.name + " 顯示扣掉 " + skill.seconds + " 秒後的時間";
+    syncPopupState();
+}
+
+function getCopyValues(){
+    return skills.map((skill) => {
+        const value = document.getElementById("result" + skill.id).textContent;
+        return value === "--:--" ? null : formatCopyText(value, skill);
+    }).filter(Boolean);
+}
+
+function fallbackCopyText(text, sourceDocument){
+    const temp = sourceDocument.createElement("textarea");
+    temp.value = text;
+    temp.setAttribute("readonly", "");
+    temp.style.position = "fixed";
+    temp.style.opacity = "0";
+    sourceDocument.body.appendChild(temp);
+    temp.focus();
+    temp.select();
+    temp.setSelectionRange(0, temp.value.length);
+
+    let copied = false;
+
+    try {
+        copied = sourceDocument.execCommand("copy");
+    } catch (error) {
+        copied = false;
+    }
+
+    sourceDocument.body.removeChild(temp);
+    return copied;
+}
+
+async function copyText(text, sourceDocument){
+    const win = sourceDocument.defaultView;
+
+    try {
+        if (win && win.navigator && win.navigator.clipboard && win.isSecureContext) {
+            await win.navigator.clipboard.writeText(text);
+            return true;
+        }
+    } catch (error) {
+    }
+
+    return fallbackCopyText(text, sourceDocument);
+}
+
+async function copyResult(id, sourceDocument = document){
+    const skill = getSkill(id);
+    const value = document.getElementById("result" + id).textContent;
+
+    if (value === "--:--") {
+        return;
+    }
+
+    const copied = await copyText(formatCopyText(value, skill), sourceDocument);
+
+    if (copied) {
+        setCopyMessage(id, "已複製");
+        setTimeout(() => setCopyMessage(id, "點結果可複製"), 1200);
+    } else {
+        setCopyMessage(id, "複製失敗");
+    }
+}
+
+async function copyAllResults(sourceDocument = document){
+    const values = getCopyValues();
+
+    if (!values.length) {
+        setGlobalMessage(sourceDocument, "沒有可複製的結果");
+        return;
+    }
+
+    const copied = await copyText(values.join("\n"), sourceDocument);
+
+    if (copied) {
+        setGlobalMessage(sourceDocument, "四個結果已複製");
+        setTimeout(() => setGlobalMessage(sourceDocument, ""), 1200);
+    } else {
+        setGlobalMessage(sourceDocument, "複製失敗");
+    }
+}
+
+function popupMarkup(){
+    const rows = skills.map((skill) => `
+        <div class="skill-row">
+            <button type="button" class="skill-btn" data-id="${skill.id}">
+                <span class="skill-name">${skill.name}</span>
+                <span class="skill-cooldown">用上方時間減 ${skill.seconds} 秒</span>
+            </button>
+            <div class="skill-result" id="result${skill.id}" title="點一下複製">--:--</div>
+        </div>
+        <div class="copy-note" id="copy${skill.id}"></div>
+    `).join("");
+
+    return `<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>女皇計時小視窗</title>
+<style>
+body{
+    margin:0;
+    padding:14px;
+    box-sizing:border-box;
+    font-family:"Segoe UI",sans-serif;
+    background:#f7efe5;
+    color:#2a2118;
+}
+.wrap{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+.toolbar{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+}
+.toolbar button,
+.control-btn{
+    width:100%;
+    padding:10px 12px;
+    border:none;
+    border-radius:12px;
+    background:#3b2d20;
+    color:#fff9f1;
+    font-size:14px;
+    font-weight:700;
+    cursor:pointer;
+}
+.control-btn.secondary,
+.toolbar button.secondary{
+    background:#d7c0a4;
+    color:#2a2118;
+}
+.timer-input{
+    width:100%;
+    box-sizing:border-box;
+    text-align:center;
+    font-size:42px;
+    font-weight:700;
+    padding:10px;
+    border:2px solid #d9c6ae;
+    border-radius:14px;
+}
+.skill-list{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+.skill-row{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 110px;
+    gap:10px;
+    align-items:center;
+}
+.skill-btn{
+    width:100%;
+    padding:14px 10px;
+    border:none;
+    border-radius:12px;
+    background:#b64635;
+    color:#fff;
+    cursor:pointer;
+}
+.skill-row:nth-child(3) .skill-btn{
+    background:#2f6f5f;
+}
+.skill-row:nth-child(5) .skill-btn{
+    background:#7a4aa6;
+}
+.skill-name{
+    display:block;
+    font-size:18px;
+}
+.skill-cooldown{
+    display:block;
+    font-size:12px;
+    margin-top:4px;
+}
+.skill-result{
+    min-height:62px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:12px;
+    border:1px solid #ead7bf;
+    background:#fff;
+    font-size:24px;
+    font-weight:700;
+    cursor:pointer;
+}
+.copy-note,
+.global-copy-note,
+.status{
+    min-height:18px;
+    font-size:13px;
+    text-align:center;
+}
+.copy-note,
+.global-copy-note{
+    color:#2c7a4b;
+}
+.status{
+    color:#8a3b2f;
+    font-weight:600;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+    <div class="toolbar">
+        <button type="button" id="copyAllPopup" class="secondary">一次複製四個</button>
+        <div class="global-copy-note" id="globalCopyMessage"></div>
+    </div>
+    <input id="timerInput" class="timer-input" type="text" value="59:59" inputmode="numeric" maxlength="5" autocomplete="off">
+    <div class="toolbar">
+        <button type="button" class="control-btn" id="startButton">開始</button>
+        <button type="button" class="control-btn secondary" id="pauseButton">暫停</button>
+        <button type="button" class="control-btn secondary" id="resetButton">重設</button>
+    </div>
+    <div class="skill-list">
+        ${rows}
+    </div>
+    <div class="status" id="statusText"></div>
+</div>
+</body>
+</html>`;
+}
+
+function syncPopupState(){
+    if (!popupWindow || popupWindow.closed) {
+        return;
+    }
+
+    const popupDoc = popupWindow.document;
+    const popupTimerInput = popupDoc.getElementById("timerInput");
+    const popupStatus = popupDoc.getElementById("statusText");
+
+    if (popupTimerInput) {
+        popupTimerInput.value = timerInput.value;
+    }
+
+    if (popupStatus) {
+        popupStatus.textContent = statusText.textContent;
+    }
+
+    skills.forEach((skill) => {
+        const mainResult = document.getElementById("result" + skill.id);
+        const popupResult = popupDoc.getElementById("result" + skill.id);
+        const mainCopy = document.getElementById("copy" + skill.id);
+        const popupCopy = popupDoc.getElementById("copy" + skill.id);
+
+        if (popupResult) {
+            popupResult.textContent = mainResult.textContent;
+        }
+
+        if (popupCopy) {
+            popupCopy.textContent = mainCopy.textContent;
+        }
+    });
+}
+
+function openPopup(){
+    if (popupWindow && !popupWindow.closed) {
+        popupWindow.focus();
+        syncPopupState();
+        return;
+    }
+
+    popupWindow = window.open("", "queen-timer-popup", "width=420,height=760,resizable=yes");
+
+    if (!popupWindow) {
+        statusText.textContent = "小視窗被瀏覽器擋住了";
+        return;
+    }
+
+    popupWindow.document.open();
+    popupWindow.document.write(popupMarkup());
+    popupWindow.document.close();
+    attachPopupHandlers();
+    syncPopupState();
+}
+
+function attachPopupHandlers(){
+    if (!popupWindow || popupWindow.closed) {
+        return;
+    }
+
+    const popupDoc = popupWindow.document;
+    const popupTimerInput = popupDoc.getElementById("timerInput");
+    const popupSkillButtons = popupDoc.querySelectorAll(".skill-btn");
+
+    popupTimerInput.addEventListener("blur", () => {
+        timerInput.value = popupTimerInput.value;
+        applyManualTime(popupTimerInput.value);
+    });
+
+    popupTimerInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+            timerInput.value = popupTimerInput.value;
+            applyManualTime(popupTimerInput.value);
+        }
+    });
+
+    popupDoc.getElementById("startButton").addEventListener("click", startTimer);
+    popupDoc.getElementById("pauseButton").addEventListener("click", pauseTimer);
+    popupDoc.getElementById("resetButton").addEventListener("click", resetTimer);
+    popupDoc.getElementById("copyAllPopup").addEventListener("click", () => copyAllResults(popupDoc));
+
+    popupSkillButtons.forEach((button) => {
+        button.addEventListener("click", () => showSkillResult(Number(button.dataset.id)));
+    });
+
+    skills.forEach((skill) => {
+        const popupResult = popupDoc.getElementById("result" + skill.id);
+        popupResult.addEventListener("click", () => copyResult(skill.id, popupDoc));
+    });
+}
+
+timerInput.addEventListener("blur", () => applyManualTime());
+timerInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+        applyManualTime();
+    }
+});
+
+startButton.addEventListener("click", startTimer);
+pauseButton.addEventListener("click", pauseTimer);
+resetButton.addEventListener("click", resetTimer);
+document.getElementById("openPopup").addEventListener("click", openPopup);
+document.getElementById("copyAll").addEventListener("click", () => copyAllResults(document));
+
+skillButtons.forEach((button) => {
+    button.addEventListener("click", () => showSkillResult(Number(button.dataset.id)));
+});
+
+skills.forEach((skill) => {
+    document.getElementById("result" + skill.id).addEventListener("click", () => copyResult(skill.id, document));
+});
+
+render();
+</script>
+</body>
+</html>
