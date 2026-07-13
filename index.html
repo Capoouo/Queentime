@@ -284,6 +284,15 @@ button:hover{
             <div class="skill-result" id="result4" title="點一下複製">--:--</div>
         </div>
         <div class="copy-note" id="copy4"></div>
+
+        <div class="skill-row">
+            <button type="button" class="skill-btn" data-id="5">
+                <span class="skill-name">傳送</span>
+                <span class="skill-cooldown">用上方時間減 90 秒</span>
+            </button>
+            <div class="skill-result" id="result5" title="點一下複製">--:--</div>
+        </div>
+        <div class="copy-note" id="copy5"></div>
     </div>
 
     <div class="status" id="statusText"></div>
@@ -295,7 +304,8 @@ const skills = [
     { id: 1, name: "反盾", shortName: "反", seconds: 79 },
     { id: 2, name: "變豬", shortName: "豬", seconds: 59 },
     { id: 3, name: "鎖潛", shortName: "鎖", seconds: 89 },
-    { id: 4, name: "活屍", shortName: "活屍", seconds: 59 }
+    { id: 4, name: "活屍", shortName: "活屍", seconds: 59 },
+    { id: 5, name: "傳送", shortName: "傳", seconds: 90 }
 ];
 
 let remainingSeconds = initialSeconds;
